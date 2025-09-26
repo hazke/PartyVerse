@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host Party - PartyVerse</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Mobile App Container -->
+    <div class="mobile-container">
+        <!-- Navigation -->
+        <nav class="app-navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <h2><i class="fas fa-party-horn"></i> PartyVerse</h2>
+                </div>
+                <div class="nav-menu">
+                    <a href="home.html" class="nav-link">Home</a>
+                    <a href="participant.html" class="nav-link">Find Parties</a>
+                    <a href="host.html" class="nav-link active">Host Party</a>
+                    <a href="owner.html" class="nav-link">List Venue</a>
+                </div>
+                <div class="nav-user">
+                    <button class="user-type-btn" id="userTypeBtn">
+                        <i class="fas fa-user"></i> Participant
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Host View -->
+            <div class="host-view">
+                <div class="host-header">
+                    <h2>Host a Party</h2>
+                    <p>Create and manage your party events</p>
+                </div>
+                
+                <div class="host-content">
+                    <div class="host-form-container">
+                        <form id="partyForm" class="party-form">
+                            <div class="form-group">
+                                <label for="partyTitle">Party Title</label>
+                                <input type="text" id="partyTitle" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="partyDescription">Description</label>
+                                <textarea id="partyDescription" rows="4" required></textarea>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="partyDate">Date</label>
+                                    <input type="date" id="partyDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="partyTime">Time</label>
+                                    <input type="time" id="partyTime" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="partyLocation">Location</label>
+                                <input type="text" id="partyLocation" placeholder="Enter address or venue name" required>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="partyType">Party Type</label>
+                                    <select id="partyType" required>
+                                        <option value="">Select Type</option>
+                                        <option value="birthday">Birthday</option>
+                                        <option value="wedding">Wedding</option>
+                                        <option value="corporate">Corporate</option>
+                                        <option value="social">Social</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="partyPrice">Price per Person</label>
+                                    <input type="number" id="partyPrice" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="partyCapacity">Max Capacity</label>
+                                <input type="number" id="partyCapacity" min="1" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Create Party
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="hosted-parties">
+                        <h3>Your Parties</h3>
+                        <div id="hostedPartiesList" class="parties-list">
+                            <!-- Hosted parties will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="window.location.href='home.html'">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='participant.html'">
+                <i class="fas fa-party-horn"></i>
+                <span>Parties</span>
+            </div>
+            <div class="nav-item active" onclick="window.location.href='host.html'">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Party</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script src="host.js"></script>
+</body>
+</html>

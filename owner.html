@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List Venue - PartyVerse</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Mobile App Container -->
+    <div class="mobile-container">
+        <!-- Navigation -->
+        <nav class="app-navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <h2><i class="fas fa-party-horn"></i> PartyVerse</h2>
+                </div>
+                <div class="nav-menu">
+                    <a href="home.html" class="nav-link">Home</a>
+                    <a href="participant.html" class="nav-link">Find Parties</a>
+                    <a href="host.html" class="nav-link">Host Party</a>
+                    <a href="owner.html" class="nav-link active">List Venue</a>
+                </div>
+                <div class="nav-user">
+                    <button class="user-type-btn" id="userTypeBtn">
+                        <i class="fas fa-user"></i> Participant
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- House Owner View -->
+            <div class="owner-view">
+                <div class="owner-header">
+                    <h2>List Your Venue</h2>
+                    <p>Rent out your space for parties and events</p>
+                </div>
+                
+                <div class="owner-content">
+                    <div class="venue-form-container">
+                        <form id="venueForm" class="venue-form">
+                            <div class="form-group">
+                                <label for="venueName">Venue Name</label>
+                                <input type="text" id="venueName" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="venueDescription">Description</label>
+                                <textarea id="venueDescription" rows="4" required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="venueAddress">Address</label>
+                                <input type="text" id="venueAddress" required>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="venueCapacity">Capacity</label>
+                                    <input type="number" id="venueCapacity" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="venuePrice">Price per Hour</label>
+                                    <input type="number" id="venuePrice" min="0" step="0.01" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="venueAmenities">Amenities</label>
+                                <div class="amenities-checkboxes">
+                                    <label><input type="checkbox" value="parking"> Parking</label>
+                                    <label><input type="checkbox" value="kitchen"> Kitchen</label>
+                                    <label><input type="checkbox" value="sound-system"> Sound System</label>
+                                    <label><input type="checkbox" value="outdoor-space"> Outdoor Space</label>
+                                    <label><input type="checkbox" value="bar"> Bar</label>
+                                    <label><input type="checkbox" value="dance-floor"> Dance Floor</label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="venueImages">Upload Images</label>
+                                <input type="file" id="venueImages" multiple accept="image/*">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> List Venue
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="listed-venues">
+                        <h3>Your Listed Venues</h3>
+                        <div id="listedVenuesList" class="venues-list">
+                            <!-- Listed venues will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="window.location.href='home.html'">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='participant.html'">
+                <i class="fas fa-party-horn"></i>
+                <span>Parties</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='host.html'">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Party</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script src="owner.js"></script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Parties - PartyVerse</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Mobile App Container -->
+    <div class="mobile-container">
+        <!-- Navigation -->
+        <nav class="app-navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <h2><i class="fas fa-party-horn"></i> PartyVerse</h2>
+                </div>
+                <div class="nav-menu">
+                    <a href="home.html" class="nav-link">Home</a>
+                    <a href="participant.html" class="nav-link active">Find Parties</a>
+                    <a href="host.html" class="nav-link">Host Party</a>
+                    <a href="owner.html" class="nav-link">List Venue</a>
+                </div>
+                <div class="nav-user">
+                    <button class="user-type-btn" id="userTypeBtn">
+                        <i class="fas fa-user"></i> Participant
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Participant View -->
+            <div class="participant-view">
+                <!-- Top Header -->
+                <div class="app-header">
+                    <div class="profile-section">
+                        <div class="profile-picture-small" onclick="window.location.href='profile.html'">
+                            <img id="headerProfileImg" src="" alt="Profile">
+                        </div>
+                    </div>
+                    <div class="app-logo">
+                        <div class="logo-banner-small">
+                            <span class="party-text-small">PARTY</span>
+                            <span class="verse-text-small">VERSE</span>
+                        </div>
+                    </div>
+                    <div class="notifications-section">
+                        <div class="notification-bell">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge">3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter Bar -->
+                <div class="search-filter-bar">
+                    <div class="search-input-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="partySearch" placeholder="Search keyword to find parties">
+                    </div>
+                    <button class="filter-btn" onclick="toggleFilters()">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+
+                <!-- Filters Panel (Hidden by default) -->
+                <div id="filtersPanel" class="filters-panel">
+                    <div class="filter-group">
+                        <label>Date</label>
+                        <select id="dateFilter">
+                            <option value="">Any Date</option>
+                            <option value="today">Today</option>
+                            <option value="weekend">This Weekend</option>
+                            <option value="next-week">Next Week</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Type</label>
+                        <select id="typeFilter">
+                            <option value="">Any Type</option>
+                            <option value="birthday">Birthday</option>
+                            <option value="wedding">Wedding</option>
+                            <option value="corporate">Corporate</option>
+                            <option value="social">Social</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Price</label>
+                        <select id="priceFilter">
+                            <option value="">Any Price</option>
+                            <option value="free">Free</option>
+                            <option value="low">Under $50</option>
+                            <option value="medium">$50-$100</option>
+                            <option value="high">Over $100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Map Section -->
+                <div class="map-section">
+                    <div id="map" class="map-container">
+                        <div class="map-content">
+                            <div class="map-locations">
+                                <div class="location-marker" style="top: 30%; left: 45%;">Stoke-on-Trent</div>
+                                <div class="location-marker" style="top: 25%; left: 50%;">Newcastle-under-Lyme</div>
+                                <div class="location-marker" style="top: 35%; left: 50%;">Hanley</div>
+                                <div class="location-marker" style="top: 40%; left: 45%;">Werrington</div>
+                                <div class="location-marker" style="top: 45%; left: 50%;">Trentham Estate</div>
+                                <div class="location-marker" style="top: 50%; left: 45%;">Longton</div>
+                                <div class="location-marker" style="top: 55%; left: 50%;">Cookshill</div>
+                            </div>
+                            <div class="road-lines">
+                                <div class="road road-a500" style="top: 40%; left: 20%; width: 60%;"></div>
+                                <div class="road road-a34" style="top: 30%; left: 30%; width: 40%; transform: rotate(45deg);"></div>
+                                <div class="road road-a53" style="top: 50%; left: 25%; width: 50%; transform: rotate(-30deg);"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommendations Section -->
+                <div class="recommendations-section">
+                    <h3>Recommendations</h3>
+                    <div class="recommendations-grid">
+                        <div class="recommendation-card" onclick="showPartyDetails(1)">
+                            <div class="card-image">
+                                <div class="party-image funky-friday"></div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Funky Friday</h4>
+                                <p>Dance the night away!</p>
+                            </div>
+                        </div>
+                        <div class="recommendation-card" onclick="showPartyDetails(2)">
+                            <div class="card-image">
+                                <div class="party-image wild-night"></div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Wild Night</h4>
+                                <p>Epic party vibes!</p>
+                            </div>
+                        </div>
+                        <div class="recommendation-card" onclick="showPartyDetails(3)">
+                            <div class="card-image">
+                                <div class="party-image parteyy"></div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Parteyy!</h4>
+                                <p>Join the celebration!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="window.location.href='home.html'">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item active" onclick="window.location.href='participant.html'">
+                <i class="fas fa-party-horn"></i>
+                <span>Parties</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='host.html'">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Party</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Party Details Modal -->
+    <div id="partyModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="partyModalContent">
+                <!-- Party details will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script src="participant.js"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - PartyVerse</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Mobile App Container -->
+    <div class="mobile-container">
+        <!-- Sign Up Screen -->
+        <div class="signup-screen">
+            <div class="screen-header">
+                <button class="back-btn" onclick="window.location.href='splash.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Sign Up</h1>
+            </div>
+            
+            <div class="signup-content">
+                <p class="instruction-text">Let us know about your self</p>
+                
+                <div class="profile-picture">
+                    <div class="profile-placeholder">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                
+                <form class="signup-form" onsubmit="completeSignup(event)">
+                    <div class="input-group">
+                        <input type="text" id="signupName" placeholder="Name:" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="email" id="signupEmail" placeholder="Email:" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="signupPassword" placeholder="Password:" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="signupConfirmPassword" placeholder="Confirm Password:" required>
+                    </div>
+                    
+                    <div class="login-prompt">
+                        <p>Already have an account?</p>
+                        <a href="login.html" class="login-link">Log in</a>
+                    </div>
+                    
+                    <button type="submit" class="btn-finish">
+                        Finish
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        function completeSignup(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            
+            // Basic validation
+            if (!name || !email || !password || !confirmPassword) {
+                showNotification('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showNotification('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showNotification('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            // Create new user
+            const newUser = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                password: password,
+                type: 'participant',
+                profilePicture: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23ffd700'/%3E%3Ccircle cx='50' cy='40' r='20' fill='%23fff'/%3E%3Cpath d='M20 80 Q50 60 80 80' fill='%23fff'/%3E%3C/svg%3E"
+            };
+            
+            // Store user data in sessionStorage
+            sessionStorage.setItem('currentUser', JSON.stringify(newUser));
+            sessionStorage.setItem('isLoggedIn', 'true');
+            
+            showNotification('Account created successfully!', 'success');
+            setTimeout(() => {
+                window.location.href = 'home.html';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

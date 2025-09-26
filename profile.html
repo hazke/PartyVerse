@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - PartyVerse</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Mobile App Container -->
+    <div class="mobile-container">
+        <!-- Navigation -->
+        <nav class="app-navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <h2><i class="fas fa-party-horn"></i> PartyVerse</h2>
+                </div>
+                <div class="nav-menu">
+                    <a href="home.html" class="nav-link">Home</a>
+                    <a href="participant.html" class="nav-link">Find Parties</a>
+                    <a href="host.html" class="nav-link">Host Party</a>
+                    <a href="owner.html" class="nav-link">List Venue</a>
+                </div>
+                <div class="nav-user">
+                    <button class="user-type-btn" id="userTypeBtn">
+                        <i class="fas fa-user"></i> Participant
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Profile View -->
+            <div class="profile-view">
+                <div class="profile-header">
+                    <button class="back-btn" onclick="window.location.href='participant.html'">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2>Profile</h2>
+                </div>
+                
+                <div class="profile-content">
+                    <div class="profile-info">
+                        <div class="profile-picture-large">
+                            <img id="profileImage" src="" alt="Profile">
+                        </div>
+                        <h3 id="userName">User Name</h3>
+                        <p id="userEmail">user@example.com</p>
+                        <p id="userType">User Type</p>
+                    </div>
+                    
+                    <div class="profile-actions">
+                        <button class="btn btn-primary" onclick="showUserTypeModal()">
+                            <i class="fas fa-edit"></i> Change Role
+                        </button>
+                        <button class="btn btn-secondary" onclick="showEditProfile()">
+                            <i class="fas fa-user-edit"></i> Edit Profile
+                        </button>
+                        <button class="btn btn-danger" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                    
+                    <div class="test-accounts">
+                        <h4>Test Accounts</h4>
+                        <div class="test-account-list">
+                            <div class="test-account">
+                                <strong>Admin:</strong> admin@partyverse.com / admin123
+                            </div>
+                            <div class="test-account">
+                                <strong>Host:</strong> host@partyverse.com / host123
+                            </div>
+                            <div class="test-account">
+                                <strong>Owner:</strong> owner@partyverse.com / owner123
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="window.location.href='home.html'">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='participant.html'">
+                <i class="fas fa-party-horn"></i>
+                <span>Parties</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='host.html'">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Party</span>
+            </div>
+            <div class="nav-item active" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Type Selection Modal -->
+    <div id="userTypeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Select Your Role</h2>
+            <div class="user-type-options">
+                <button class="user-type-option" data-type="participant">
+                    <i class="fas fa-search"></i>
+                    <h3>Participant</h3>
+                    <p>Find and join parties</p>
+                </button>
+                <button class="user-type-option" data-type="host">
+                    <i class="fas fa-calendar-plus"></i>
+                    <h3>Host</h3>
+                    <p>Create and manage parties</p>
+                </button>
+                <button class="user-type-option" data-type="owner">
+                    <i class="fas fa-home"></i>
+                    <h3>House Owner</h3>
+                    <p>Rent out your venue</p>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script src="profile.js"></script>
+</body>
+</html>

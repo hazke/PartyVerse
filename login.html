@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - PartyVerse</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Mobile App Container -->
+    <div class="mobile-container">
+        <!-- Login Screen -->
+        <div class="login-screen">
+            <div class="screen-header">
+                <button class="back-btn" onclick="window.location.href='splash.html'">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Log In</h1>
+            </div>
+            
+            <div class="login-content">
+                <p class="instruction-text">Welcome back!</p>
+                
+                <!-- Quick Login Buttons for Testing -->
+                <div class="quick-login">
+                    <button class="quick-btn" onclick="quickLogin('admin@partyverse.com', 'admin123')">
+                        Login as Admin
+                    </button>
+                    <button class="quick-btn" onclick="quickLogin('host@partyverse.com', 'host123')">
+                        Login as Host
+                    </button>
+                    <button class="quick-btn" onclick="quickLogin('owner@partyverse.com', 'owner123')">
+                        Login as Owner
+                    </button>
+                </div>
+                
+                <form class="login-form" onsubmit="completeLogin(event)">
+                    <div class="input-group">
+                        <input type="email" id="loginEmail" placeholder="Email:" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="loginPassword" placeholder="Password:" required>
+                    </div>
+                    
+                    <div class="signup-prompt">
+                        <p>Don't have an account?</p>
+                        <a href="signup.html" class="signup-link">Sign up</a>
+                    </div>
+                    
+                    <button type="submit" class="btn-finish">
+                        Log In
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        function completeLogin(event) {
+            event.preventDefault();
+            console.log('Login form submitted');
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            console.log('Email:', email, 'Password:', password);
+            
+            // Basic validation
+            if (!email || !password) {
+                showNotification('Please fill in all fields', 'error');
+                return;
+            }
+            
+            // Find user
+            const user = testUsers.find(u => u.email === email && u.password === password);
+            console.log('Found user:', user);
+            
+            if (user) {
+                // Store user data in sessionStorage
+                sessionStorage.setItem('currentUser', JSON.stringify(user));
+                sessionStorage.setItem('isLoggedIn', 'true');
+                
+                showNotification(`Welcome back, ${user.name}!`, 'success');
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 1500);
+            } else {
+                showNotification('Invalid email or password', 'error');
+            }
+        }
+
+        function quickLogin(email, password) {
+            // Find user
+            const user = testUsers.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                // Store user data in sessionStorage
+                sessionStorage.setItem('currentUser', JSON.stringify(user));
+                sessionStorage.setItem('isLoggedIn', 'true');
+                
+                showNotification(`Welcome back, ${user.name}!`, 'success');
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 1000);
+            } else {
+                showNotification('Invalid credentials', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
