@@ -26,7 +26,6 @@ function updateProfileInfo() {
         const typeLabels = {
             participant: 'Participant',
             host: 'Host',
-            owner: 'House Owner',
             admin: 'Admin'
         };
         if (userType) userType.textContent = typeLabels[currentUser.type] || 'User';
@@ -35,13 +34,11 @@ function updateProfileInfo() {
             const icons = {
                 participant: 'fas fa-search',
                 host: 'fas fa-calendar-plus',
-                owner: 'fas fa-home',
                 admin: 'fas fa-crown'
             };
             const labels = {
                 participant: 'Participant',
                 host: 'Host',
-                owner: 'House Owner',
                 admin: 'Admin'
             };
 

@@ -21,7 +21,10 @@
                     <a href="home.html" class="nav-link">Home</a>
                     <a href="participant.html" class="nav-link">Find Parties</a>
                     <a href="host.html" class="nav-link active">Host Party</a>
-                    <a href="owner.html" class="nav-link">List Venue</a>
+                    <a href="chat.html" class="nav-link" id="chatNavLink">
+                        Chat
+                        <span class="nav-notification-badge" id="navNotificationBadge" style="display: none;">0</span>
+                    </a>
                 </div>
                 <div class="nav-user">
                     <button class="user-type-btn" id="userTypeBtn">
@@ -128,7 +131,32 @@
         </div>
     </div>
 
+    <!-- Chat Modal -->
+    <div id="chatModal" class="modal">
+        <div class="modal-content chat-modal-content">
+            <div id="chatModalContent">
+                <!-- Chat interface will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <script src="shared.js"></script>
+    <script>
+        // Check if user is logged in and has permission to host
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!checkAuth()) {
+                return;
+            }
+            
+            const currentUser = getCurrentUser();
+            if (currentUser && currentUser.type === 'participant') {
+                showNotification('Only hosts and admins can create parties!', 'error');
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 2000);
+            }
+        });
+    </script>
     <script src="host.js"></script>
 </body>
 </html>

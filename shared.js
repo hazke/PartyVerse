@@ -19,11 +19,11 @@ const testUsers = [
     },
     {
         id: 3,
-        name: "Sarah Owner",
-        email: "owner@partyverse.com",
-        password: "owner123",
-        type: "owner",
-        profilePicture: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23ff6b6b'/%3E%3Ccircle cx='50' cy='40' r='20' fill='%23fff'/%3E%3Cpath d='M20 80 Q50 60 80 80' fill='%23fff'/%3E%3C/svg%3E"
+        name: "Sarah Participant",
+        email: "participant@partyverse.com",
+        password: "participant123",
+        type: "participant",
+        profilePicture: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%233b82f6'/%3E%3Ccircle cx='50' cy='40' r='20' fill='%23fff'/%3E%3Cpath d='M20 80 Q50 60 80 80' fill='%23fff'/%3E%3C/svg%3E"
     }
 ];
 
@@ -109,29 +109,6 @@ const sampleParties = [
     }
 ];
 
-// Sample venues data
-const sampleVenues = [
-    {
-        id: 1,
-        name: "Sunset Beach House",
-        description: "Beautiful beachfront property perfect for parties",
-        address: "123 Beach Street, Miami",
-        capacity: 50,
-        pricePerHour: 200,
-        amenities: ["parking", "kitchen", "outdoor-space"],
-        owner: "Beach Properties LLC"
-    },
-    {
-        id: 2,
-        name: "Downtown Event Center",
-        description: "Modern event space in the heart of downtown",
-        address: "456 Business Blvd, Orlando",
-        capacity: 100,
-        pricePerHour: 300,
-        amenities: ["parking", "kitchen", "sound-system", "dance-floor"],
-        owner: "Event Spaces Inc"
-    }
-];
 
 // Notification system
 function showNotification(message, type = 'info') {
@@ -207,6 +184,307 @@ function formatDate(dateString) {
         day: 'numeric' 
     });
 }
+
+// Chat Database Management
+const ChatDB = {
+    // Initialize chat database
+    init() {
+        if (!localStorage.getItem('partyverse_chats')) {
+            localStorage.setItem('partyverse_chats', JSON.stringify({}));
+        }
+        if (!localStorage.getItem('partyverse_chat_messages')) {
+            localStorage.setItem('partyverse_chat_messages', JSON.stringify([]));
+        }
+        if (!localStorage.getItem('partyverse_chat_notifications')) {
+            localStorage.setItem('partyverse_chat_notifications', JSON.stringify({}));
+        }
+    },
+
+    // Get all chats
+    getAllChats() {
+        return JSON.parse(localStorage.getItem('partyverse_chats') || '{}');
+    },
+
+    // Get chat for a specific party
+    getPartyChat(partyId) {
+        const chats = this.getAllChats();
+        return chats[partyId] || null;
+    },
+
+    // Create or get chat for a party
+    getOrCreatePartyChat(partyId) {
+        const chats = this.getAllChats();
+        if (!chats[partyId]) {
+            chats[partyId] = {
+                partyId: partyId,
+                participants: [],
+                created: new Date().toISOString(),
+                lastActivity: new Date().toISOString()
+            };
+            localStorage.setItem('partyverse_chats', JSON.stringify(chats));
+        }
+        return chats[partyId];
+    },
+
+    // Add participant to chat
+    addParticipantToChat(partyId, userId) {
+        const chats = this.getAllChats();
+        if (chats[partyId]) {
+            if (!chats[partyId].participants.includes(userId)) {
+                chats[partyId].participants.push(userId);
+                chats[partyId].lastActivity = new Date().toISOString();
+                localStorage.setItem('partyverse_chats', JSON.stringify(chats));
+            }
+        }
+    },
+
+    // Get all messages for a party
+    getPartyMessages(partyId) {
+        const messages = JSON.parse(localStorage.getItem('partyverse_chat_messages') || '[]');
+        return messages.filter(msg => msg.partyId === partyId);
+    },
+
+    // Add message to chat
+    addMessage(partyId, messageObj) {
+        const messages = JSON.parse(localStorage.getItem('partyverse_chat_messages') || '[]');
+        
+        // Ensure message object has correct structure
+        const newMessage = {
+            id: messageObj.id || Date.now(),
+            partyId: partyId,
+            userId: messageObj.userId,
+            senderName: messageObj.senderName,
+            text: messageObj.text,
+            timestamp: messageObj.timestamp || new Date().toISOString(),
+            read: messageObj.read || false
+        };
+        
+        messages.push(newMessage);
+        localStorage.setItem('partyverse_chat_messages', JSON.stringify(messages));
+
+        // Update chat last activity
+        const chats = this.getAllChats();
+        if (chats[partyId]) {
+            chats[partyId].lastActivity = new Date().toISOString();
+            chats[partyId].lastMessageTime = new Date().toISOString();
+            localStorage.setItem('partyverse_chats', JSON.stringify(chats));
+        }
+
+        return newMessage;
+    },
+
+    // Mark messages as read
+    markMessagesAsRead(partyId, userId) {
+        const messages = JSON.parse(localStorage.getItem('partyverse_chat_messages') || '[]');
+        const updatedMessages = messages.map(msg => {
+            if (msg.partyId === partyId && msg.userId !== userId) {
+                msg.read = true;
+            }
+            return msg;
+        });
+        localStorage.setItem('partyverse_chat_messages', JSON.stringify(updatedMessages));
+    },
+
+    // Get unread message count for a party
+    getUnreadCount(partyId, userId) {
+        const messages = this.getPartyMessages(partyId);
+        return messages.filter(msg => msg.userId !== userId && !msg.read).length;
+    },
+
+    // Get recent chats for a user
+    getUserRecentChats(userId) {
+        const chats = this.getAllChats();
+        const userChats = Object.values(chats).filter(chat => 
+            chat.participants.includes(userId)
+        );
+        
+        // Sort by last activity
+        return userChats.sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+    },
+
+    // Notification system
+    addNotification(userId, partyId, message) {
+        const notifications = JSON.parse(localStorage.getItem('partyverse_chat_notifications') || '{}');
+        if (!notifications[userId]) {
+            notifications[userId] = [];
+        }
+        
+        const notification = {
+            id: Date.now(),
+            partyId: partyId,
+            message: message.text,
+            sender: message.senderName,
+            timestamp: message.timestamp,
+            read: false
+        };
+        
+        notifications[userId].unshift(notification);
+        
+        // Keep only last 50 notifications per user
+        if (notifications[userId].length > 50) {
+            notifications[userId] = notifications[userId].slice(0, 50);
+        }
+        
+        localStorage.setItem('partyverse_chat_notifications', JSON.stringify(notifications));
+        return notification;
+    },
+
+    getNotifications(userId) {
+        return JSON.parse(localStorage.getItem('partyverse_chat_notifications') || '{}')[userId] || [];
+    },
+
+    markNotificationAsRead(userId, notificationId) {
+        const notifications = JSON.parse(localStorage.getItem('partyverse_chat_notifications') || '{}');
+        if (notifications[userId]) {
+            const notification = notifications[userId].find(n => n.id === notificationId);
+            if (notification) {
+                notification.read = true;
+                localStorage.setItem('partyverse_chat_notifications', JSON.stringify(notifications));
+            }
+        }
+    },
+
+    markAllNotificationsAsRead(userId, partyId) {
+        const notifications = JSON.parse(localStorage.getItem('partyverse_chat_notifications') || '{}');
+        if (notifications[userId]) {
+            notifications[userId].forEach(notification => {
+                if (notification.partyId === partyId) {
+                    notification.read = true;
+                }
+            });
+            localStorage.setItem('partyverse_chat_notifications', JSON.stringify(notifications));
+        }
+    },
+
+    getUnreadNotificationCount(userId) {
+        const notifications = this.getNotifications(userId);
+        return notifications.filter(n => !n.read).length;
+    }
+};
+
+// Initialize chat database when script loads
+ChatDB.init();
+
+// Clear existing chat data and initialize with sample messages
+function initializeChatData() {
+    // Clear existing chat data
+    localStorage.removeItem('partyverse_chats');
+    localStorage.removeItem('partyverse_chat_messages');
+    localStorage.removeItem('partyverse_chat_notifications');
+    
+    // Reinitialize
+    ChatDB.init();
+    
+    // Add sample messages to demonstrate chat functionality
+    const sampleMessages = [
+        {
+            id: Date.now() - 300000,
+            partyId: 1,
+            userId: 2,
+            senderName: "John Host",
+            text: "Welcome everyone to Funky Friday! 🎉",
+            timestamp: new Date(Date.now() - 300000).toISOString(),
+            read: false
+        },
+        {
+            id: Date.now() - 240000,
+            partyId: 1,
+            userId: 3,
+            senderName: "Sarah Participant",
+            text: "Thanks for hosting! Can't wait for the party!",
+            timestamp: new Date(Date.now() - 240000).toISOString(),
+            read: false
+        },
+        {
+            id: Date.now() - 180000,
+            partyId: 1,
+            userId: 2,
+            senderName: "John Host",
+            text: "The music setup is ready and we have great drinks!",
+            timestamp: new Date(Date.now() - 180000).toISOString(),
+            read: false
+        },
+        {
+            id: Date.now() - 120000,
+            partyId: 2,
+            userId: 2,
+            senderName: "John Host",
+            text: "Beach party is going to be amazing! 🌊",
+            timestamp: new Date(Date.now() - 120000).toISOString(),
+            read: false
+        }
+    ];
+    
+    // Add sample messages
+    sampleMessages.forEach(msg => {
+        ChatDB.addMessage(msg.partyId, msg);
+        ChatDB.getOrCreatePartyChat(msg.partyId);
+        ChatDB.addParticipantToChat(msg.partyId, msg.userId);
+    });
+    
+    console.log('Chat data initialized with sample messages');
+}
+
+// Initialize chat data on first load
+if (!localStorage.getItem('partyverse_chat_initialized')) {
+    initializeChatData();
+    localStorage.setItem('partyverse_chat_initialized', 'true');
+}
+
+// Notification system for chat messages
+function showChatNotification(partyName, senderName, message) {
+    // Show browser notification if permission granted
+    if (Notification.permission === 'granted') {
+        const notification = new Notification(`New message in ${partyName}`, {
+            body: `${senderName}: ${message}`,
+            icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="50" fill="%233b82f6"/%3E%3Ccircle cx="50" cy="40" r="20" fill="%23fff"/%3E%3Cpath d="M20 80 Q50 60 80 80" fill="%23fff"/%3E%3C/svg%3E',
+            tag: `chat-${partyName}`,
+            requireInteraction: false
+        });
+        
+        notification.onclick = function() {
+            window.focus();
+            notification.close();
+        };
+        
+        // Auto close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+    }
+    
+    // Also show in-app notification
+    showNotification(`New message from ${senderName} in ${partyName}`, 'info');
+}
+
+// Request notification permission
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+// Initialize notification permission on page load
+document.addEventListener('DOMContentLoaded', requestNotificationPermission);
+
+// Update navigation notification badges
+function updateNavigationNotificationBadges() {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    const unreadCount = ChatDB.getUnreadNotificationCount(currentUser.id);
+    const badge = document.getElementById('navNotificationBadge');
+    
+    if (badge) {
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            badge.style.display = 'inline-flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Update notification badges when page loads
+document.addEventListener('DOMContentLoaded', updateNavigationNotificationBadges);
 
 // Add CSS animations for notifications
 const style = document.createElement('style');

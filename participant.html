@@ -21,7 +21,10 @@
                     <a href="home.html" class="nav-link">Home</a>
                     <a href="participant.html" class="nav-link active">Find Parties</a>
                     <a href="host.html" class="nav-link">Host Party</a>
-                    <a href="owner.html" class="nav-link">List Venue</a>
+                    <a href="chat.html" class="nav-link" id="chatNavLink">
+                        Chat
+                        <span class="nav-notification-badge" id="navNotificationBadge" style="display: none;">0</span>
+                    </a>
                 </div>
                 <div class="nav-user">
                     <button class="user-type-btn" id="userTypeBtn">
@@ -185,6 +188,25 @@
             <span class="close">&times;</span>
             <div id="partyModalContent">
                 <!-- Party details will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="shareModalContent">
+                <!-- Share options will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chatModal" class="modal">
+        <div class="modal-content chat-modal-content">
+            <div id="chatModalContent">
+                <!-- Chat interface will be populated by JavaScript -->
             </div>
         </div>
     </div>

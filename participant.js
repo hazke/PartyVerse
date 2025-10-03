@@ -18,13 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const icons = {
                 participant: 'fas fa-search',
                 host: 'fas fa-calendar-plus',
-                owner: 'fas fa-home',
                 admin: 'fas fa-crown'
             };
             const labels = {
                 participant: 'Participant',
                 host: 'Host',
-                owner: 'House Owner',
                 admin: 'Admin'
             };
 
@@ -92,9 +90,16 @@ function showPartyDetails(partyId) {
             <p><strong>Capacity:</strong> ${party.capacity} people</p>
             <p><strong>Attendees:</strong> ${party.attendees} people</p>
             <p><strong>Host:</strong> ${party.host}</p>
-            <div style="margin-top: 2rem;">
+            <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
                 <button class="btn btn-primary" onclick="joinParty(${party.id})">
                     <i class="fas fa-plus"></i> Join Party
+                </button>
+                <button class="btn btn-secondary" onclick="shareParty(${party.id})">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+                <button class="btn btn-chat" onclick="openPartyChat(${party.id})">
+                    <i class="fas fa-comments"></i> Chat
+                    <span class="chat-badge" id="chatBadge-${party.id}" style="display: none;">0</span>
                 </button>
             </div>
         `;
@@ -116,3 +121,354 @@ function joinParty(partyId) {
         showNotification('Sorry, this party is full!', 'error');
     }
 }
+
+function shareParty(partyId) {
+    const party = sampleParties.find(p => p.id === partyId);
+    if (!party) return;
+    
+    // Create share modal content
+    const shareModal = document.getElementById('shareModal');
+    const shareContent = document.getElementById('shareModalContent');
+    
+    if (shareContent) {
+        shareContent.innerHTML = `
+            <h2>Share "${party.title}"</h2>
+            <p>Share this amazing party with your friends!</p>
+            
+            <div class="share-options">
+                <button class="share-btn facebook-btn" onclick="shareToFacebook(${party.id})">
+                    <i class="fab fa-facebook-f"></i>
+                    Facebook
+                </button>
+                <button class="share-btn twitter-btn" onclick="shareToTwitter(${party.id})">
+                    <i class="fab fa-twitter"></i>
+                    Twitter
+                </button>
+                <button class="share-btn whatsapp-btn" onclick="shareToWhatsApp(${party.id})">
+                    <i class="fab fa-whatsapp"></i>
+                    WhatsApp
+                </button>
+                <button class="share-btn email-btn" onclick="shareToEmail(${party.id})">
+                    <i class="fas fa-envelope"></i>
+                    Email
+                </button>
+                <button class="share-btn copy-btn" onclick="copyPartyLink(${party.id})">
+                    <i class="fas fa-copy"></i>
+                    Copy Link
+                </button>
+            </div>
+            
+            <div class="share-preview">
+                <h4>Preview:</h4>
+                <div class="share-preview-content">
+                    <strong>${party.title}</strong><br>
+                    📅 ${formatDate(party.date)} at ${party.time}<br>
+                    📍 ${party.location}<br>
+                    💰 ${party.price === 0 ? 'Free' : '$' + party.price + ' per person'}<br>
+                    👥 ${party.attendees}/${party.capacity} people<br>
+                    <em>${party.description}</em>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (shareModal) {
+        shareModal.style.display = 'block';
+    }
+}
+
+// Social media sharing functions
+function shareToFacebook(partyId) {
+    const party = sampleParties.find(p => p.id === partyId);
+    if (!party) return;
+    
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(`Check out this amazing party: ${party.title} on ${formatDate(party.date)} at ${party.location}!`);
+    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`;
+    
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+    showNotification('Opening Facebook to share...', 'info');
+}
+
+function shareToTwitter(partyId) {
+    const party = sampleParties.find(p => p.id === partyId);
+    if (!party) return;
+    
+    const text = encodeURIComponent(`Check out this amazing party: ${party.title} on ${formatDate(party.date)} at ${party.location}! Join me at this awesome event! 🎉`);
+    const url = encodeURIComponent(window.location.href);
+    const hashtags = encodeURIComponent('PartyVerse,Party,Events');
+    const shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${hashtags}`;
+    
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+    showNotification('Opening Twitter to share...', 'info');
+}
+
+function shareToWhatsApp(partyId) {
+    const party = sampleParties.find(p => p.id === partyId);
+    if (!party) return;
+    
+    const text = encodeURIComponent(`🎉 Check out this amazing party: ${party.title}\n\n📅 ${formatDate(party.date)} at ${party.time}\n📍 ${party.location}\n💰 ${party.price === 0 ? 'Free' : '$' + party.price + ' per person'}\n👥 ${party.attendees}/${party.capacity} people\n\n${party.description}\n\nFind more parties at PartyVerse!`);
+    const shareUrl = `https://wa.me/?text=${text}`;
+    
+    window.open(shareUrl, '_blank');
+    showNotification('Opening WhatsApp to share...', 'info');
+}
+
+function shareToEmail(partyId) {
+    const party = sampleParties.find(p => p.id === partyId);
+    if (!party) return;
+    
+    const subject = encodeURIComponent(`Amazing Party: ${party.title}`);
+    const body = encodeURIComponent(`Hey! I found an amazing party that you might be interested in:
+
+🎉 ${party.title}
+📅 ${formatDate(party.date)} at ${party.time}
+📍 ${party.location}
+💰 ${party.price === 0 ? 'Free' : '$' + party.price + ' per person'}
+👥 ${party.attendees}/${party.capacity} people
+
+${party.description}
+
+Check it out and let me know if you want to go together!
+
+Find more parties at PartyVerse.`);
+    
+    const mailtoUrl = `mailto:?subject=${subject}&body=${body}`;
+    window.location.href = mailtoUrl;
+    showNotification('Opening email client...', 'info');
+}
+
+function copyPartyLink(partyId) {
+    const party = sampleParties.find(p => p.id === partyId);
+    if (!party) return;
+    
+    const shareText = `🎉 ${party.title}\n📅 ${formatDate(party.date)} at ${party.time}\n📍 ${party.location}\n💰 ${party.price === 0 ? 'Free' : '$' + party.price + ' per person'}\n👥 ${party.attendees}/${party.capacity} people\n\n${party.description}\n\nFind more parties at PartyVerse!`;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareText).then(() => {
+            showNotification('Party details copied to clipboard!', 'success');
+        }).catch(() => {
+            fallbackCopyTextToClipboard(shareText);
+        });
+    } else {
+        fallbackCopyTextToClipboard(shareText);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showNotification('Party details copied to clipboard!', 'success');
+    } catch (err) {
+        showNotification('Unable to copy to clipboard', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+// Chat functionality
+function openPartyChat(partyId) {
+    const party = sampleParties.find(p => p.id === partyId);
+    if (!party) return;
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    // Create or get chat for this party
+    ChatDB.getOrCreatePartyChat(partyId);
+    ChatDB.addParticipantToChat(partyId, currentUser.id);
+    
+    // Show chat modal
+    const chatModal = document.getElementById('chatModal');
+    const chatContent = document.getElementById('chatModalContent');
+    
+    if (chatContent) {
+        chatContent.innerHTML = `
+            <div class="chat-header">
+                <h2>Chat - ${party.title}</h2>
+                <span class="close" onclick="closeChat()">&times;</span>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages-${partyId}">
+                <!-- Messages will be loaded here -->
+            </div>
+            
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <input type="text" id="chatInput-${partyId}" placeholder="Type your message..." maxlength="500">
+                    <button class="chat-send-btn" onclick="sendChatMessage(${partyId})">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="chat-info">
+                    <small>Chatting as ${currentUser.name} (${currentUser.type})</small>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (chatModal) {
+        chatModal.style.display = 'block';
+        loadChatMessages(partyId);
+        updateUnreadBadges();
+        
+        // Mark messages as read
+        ChatDB.markMessagesAsRead(partyId, currentUser.id);
+        
+        // Focus on input
+        setTimeout(() => {
+            const input = document.getElementById(`chatInput-${partyId}`);
+            if (input) input.focus();
+        }, 100);
+        
+        // Setup enter key listener
+        const input = document.getElementById(`chatInput-${partyId}`);
+        if (input) {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendChatMessage(partyId);
+                }
+            });
+        }
+    }
+}
+
+function loadChatMessages(partyId) {
+    const messages = ChatDB.getPartyMessages(partyId);
+    const messagesContainer = document.getElementById(`chatMessages-${partyId}`);
+    
+    if (!messagesContainer) return;
+    
+    if (messages.length === 0) {
+        messagesContainer.innerHTML = `
+            <div class="chat-welcome">
+                <i class="fas fa-comments"></i>
+                <h4>Start the conversation!</h4>
+                <p>Be the first to chat about this party.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const currentUser = getCurrentUser();
+    messagesContainer.innerHTML = messages.map(msg => {
+        const isOwnMessage = msg.userId === currentUser.id;
+        const messageTime = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        return `
+            <div class="chat-message ${isOwnMessage ? 'own-message' : 'other-message'}">
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="sender-name">${msg.senderName || msg.userName || 'Unknown'}</span>
+                        <span class="message-time">${messageTime}</span>
+                    </div>
+                    <div class="message-text">${escapeHTML(msg.text || msg.message || '')}</div>
+                    <div class="message-meta">
+                        <span class="user-type-badge ${msg.userType || 'participant'}">${(msg.userType || 'participant').toUpperCase()}</span>
+                        ${!msg.read && !isOwnMessage ? '<span class="unread-indicator">●</span>' : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Scroll to bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function sendChatMessage(partyId) {
+    const input = document.getElementById(`chatInput-${partyId}`);
+    if (!input) return;
+    
+    const message = input.value.trim();
+    if (!message) return;
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    // Create message object
+    const messageObj = {
+        id: Date.now(),
+        partyId: partyId,
+        userId: currentUser.id,
+        senderName: currentUser.name,
+        text: message,
+        timestamp: new Date().toISOString(),
+        read: false
+    };
+    
+    // Add message to database
+    ChatDB.addMessage(partyId, messageObj);
+    
+    // Send notifications to other participants
+    const party = sampleParties.find(p => p.id == partyId);
+    const chat = ChatDB.getPartyChat(partyId);
+    if (party && chat) {
+        chat.participants.forEach(participantId => {
+            if (participantId !== currentUser.id) {
+                ChatDB.addNotification(participantId, partyId, messageObj);
+                showChatNotification(party.name, currentUser.name, message);
+            }
+        });
+    }
+    
+    // Clear input
+    input.value = '';
+    
+    // Reload messages
+    loadChatMessages(partyId);
+    
+    // Update unread badges
+    updateUnreadBadges();
+    
+    // Update navigation notification badges
+    updateNavigationNotificationBadges();
+    
+    // Show notification
+    showNotification('Message sent!', 'success');
+}
+
+function closeChat() {
+    const chatModal = document.getElementById('chatModal');
+    if (chatModal) {
+        chatModal.style.display = 'none';
+    }
+}
+
+function updateUnreadBadges() {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    sampleParties.forEach(party => {
+        const unreadCount = ChatDB.getUnreadCount(party.id, currentUser.id);
+        const badge = document.getElementById(`chatBadge-${party.id}`);
+        
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    });
+}
+
+function escapeHTML(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Initialize chat badges on page load
+document.addEventListener('DOMContentLoaded', () => {
+    if (checkAuth()) {
+        setTimeout(updateUnreadBadges, 500);
+    }
+});
