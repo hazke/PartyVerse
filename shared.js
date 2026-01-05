@@ -31,8 +31,16 @@ const testUsers = [
 const PartyDB = {
     // Get all parties (sample + user-created)
     getAllParties() {
-        const userParties = JSON.parse(localStorage.getItem('partyverse_user_parties') || '[]');
-        return [...sampleParties, ...userParties];
+        try {
+            // Ensure sampleParties is available (fallback to empty array if not defined yet)
+            const sample = typeof sampleParties !== 'undefined' ? sampleParties : [];
+            const userParties = JSON.parse(localStorage.getItem('partyverse_user_parties') || '[]');
+            return [...sample, ...userParties];
+        } catch (error) {
+            console.error('Error loading parties:', error);
+            // Fallback to sampleParties only if localStorage fails
+            return typeof sampleParties !== 'undefined' ? sampleParties : [];
+        }
     },
     
     // Add a new party (created by user)

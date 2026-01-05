@@ -285,9 +285,9 @@ body {
 }
 
 .btn-mitid {
-    background: #8b5cf6;
-    color: #fff;
-    border: none;
+    background: #fff;
+    color: #8b5cf6;
+    border: 2px solid #8b5cf6;
     padding: 1rem 2rem;
     border-radius: 25px;
     font-size: 1.1rem;
@@ -296,15 +296,23 @@ body {
     transition: all 0.3s ease;
     width: 100%;
     margin-top: 1rem;
+    margin-bottom: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
 }
 
 .btn-mitid:hover {
-    background: #7c3aed;
+    background: #8b5cf6;
+    color: #fff;
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.btn-mitid:active {
+    transform: translateY(0);
 }
 
 .btn-mitid i {

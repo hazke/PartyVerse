@@ -506,20 +506,37 @@ function updateBellNotificationBadge() {
 // Render recommendations section
 function renderRecommendations() {
     const recommendationsGrid = document.getElementById('recommendationsGrid');
-    if (!recommendationsGrid) return;
-    
-    // Get all parties (sample + user-created)
-    const allParties = PartyDB.getAllParties();
-    
-    // Sort by date (most recent first) and take first 6
-    const sortedParties = allParties
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 6);
-    
-    if (sortedParties.length === 0) {
-        recommendationsGrid.innerHTML = '<p style="color: #666; padding: 1rem;">No parties available yet.</p>';
+    if (!recommendationsGrid) {
+        console.error('Recommendations grid not found');
         return;
     }
+    
+    try {
+        // Get all parties (sample + user-created)
+        const allParties = PartyDB.getAllParties();
+        
+        if (!allParties || allParties.length === 0) {
+            recommendationsGrid.innerHTML = '<p style="color: #666; padding: 1rem;">No parties available yet.</p>';
+            console.warn('No parties found in PartyDB');
+            return;
+        }
+        
+        // Sort by date (most recent first) and take first 6
+        const sortedParties = allParties
+            .filter(party => party && party.title) // Filter out invalid parties
+            .sort((a, b) => {
+                try {
+                    return new Date(b.date) - new Date(a.date);
+                } catch (e) {
+                    return 0;
+                }
+            })
+            .slice(0, 6);
+        
+        if (sortedParties.length === 0) {
+            recommendationsGrid.innerHTML = '<p style="color: #666; padding: 1rem;">No parties available yet.</p>';
+            return;
+        }
     
     // Generate gradient colors for party cards
     const gradients = [
@@ -531,24 +548,28 @@ function renderRecommendations() {
         'linear-gradient(45deg, #ffd93d, #ff6b6b, #8b5cf6)'
     ];
     
-    recommendationsGrid.innerHTML = sortedParties.map((party, index) => {
-        const gradient = gradients[index % gradients.length];
-        const shortDescription = party.description.length > 30 
-            ? party.description.substring(0, 30) + '...' 
-            : party.description;
-        
-        return `
-            <div class="recommendation-card" onclick="showPartyDetails(${party.id})">
-                <div class="card-image">
-                    <div class="party-image" style="background: ${gradient}; background-size: 400% 400%; animation: gradientShift 3s ease infinite;"></div>
+        recommendationsGrid.innerHTML = sortedParties.map((party, index) => {
+            const gradient = gradients[index % gradients.length];
+            const shortDescription = (party.description || '').length > 30 
+                ? (party.description || '').substring(0, 30) + '...' 
+                : (party.description || 'No description');
+            
+            return `
+                <div class="recommendation-card" onclick="showPartyDetails(${party.id})">
+                    <div class="card-image">
+                        <div class="party-image" style="background: ${gradient}; background-size: 400% 400%; animation: gradientShift 3s ease infinite;"></div>
+                    </div>
+                    <div class="card-content">
+                        <h4>${escapeHTML(party.title || 'Untitled Party')}</h4>
+                        <p>${escapeHTML(shortDescription)}</p>
+                    </div>
                 </div>
-                <div class="card-content">
-                    <h4>${escapeHTML(party.title)}</h4>
-                    <p>${escapeHTML(shortDescription)}</p>
-                </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error rendering recommendations:', error);
+        recommendationsGrid.innerHTML = '<p style="color: #dc3545; padding: 1rem;">Error loading parties. Please refresh the page.</p>';
+    }
 }
 
 function escapeHTML(text) {
