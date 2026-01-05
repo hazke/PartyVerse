@@ -32,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup event listeners
     setupParticipantEvents();
+    
+    // Render recommendations
+    renderRecommendations();
 });
 
 function setupParticipantEvents() {
@@ -74,7 +77,7 @@ function filterParties() {
 }
 
 function showPartyDetails(partyId) {
-    const party = sampleParties.find(p => p.id === partyId);
+    const party = PartyDB.getPartyById(partyId);
     if (!party) return;
 
     const modalContent = document.getElementById('partyModalContent');
@@ -112,7 +115,7 @@ function showPartyDetails(partyId) {
 }
 
 function joinParty(partyId) {
-    const party = sampleParties.find(p => p.id === partyId);
+    const party = PartyDB.getPartyById(partyId);
     if (party && party.attendees < party.capacity) {
         party.attendees++;
         showNotification('Successfully joined the party!', 'success');
@@ -123,7 +126,7 @@ function joinParty(partyId) {
 }
 
 function shareParty(partyId) {
-    const party = sampleParties.find(p => p.id === partyId);
+    const party = PartyDB.getPartyById(partyId);
     if (!party) return;
     
     // Create share modal content
@@ -179,7 +182,7 @@ function shareParty(partyId) {
 
 // Social media sharing functions
 function shareToFacebook(partyId) {
-    const party = sampleParties.find(p => p.id === partyId);
+    const party = PartyDB.getPartyById(partyId);
     if (!party) return;
     
     const url = encodeURIComponent(window.location.href);
@@ -191,7 +194,7 @@ function shareToFacebook(partyId) {
 }
 
 function shareToTwitter(partyId) {
-    const party = sampleParties.find(p => p.id === partyId);
+    const party = PartyDB.getPartyById(partyId);
     if (!party) return;
     
     const text = encodeURIComponent(`Check out this amazing party: ${party.title} on ${formatDate(party.date)} at ${party.location}! Join me at this awesome event! 🎉`);
@@ -204,7 +207,7 @@ function shareToTwitter(partyId) {
 }
 
 function shareToWhatsApp(partyId) {
-    const party = sampleParties.find(p => p.id === partyId);
+    const party = PartyDB.getPartyById(partyId);
     if (!party) return;
     
     const text = encodeURIComponent(`🎉 Check out this amazing party: ${party.title}\n\n📅 ${formatDate(party.date)} at ${party.time}\n📍 ${party.location}\n💰 ${party.price === 0 ? 'Free' : '$' + party.price + ' per person'}\n👥 ${party.attendees}/${party.capacity} people\n\n${party.description}\n\nFind more parties at PartyVerse!`);
@@ -215,7 +218,7 @@ function shareToWhatsApp(partyId) {
 }
 
 function shareToEmail(partyId) {
-    const party = sampleParties.find(p => p.id === partyId);
+    const party = PartyDB.getPartyById(partyId);
     if (!party) return;
     
     const subject = encodeURIComponent(`Amazing Party: ${party.title}`);
@@ -239,7 +242,7 @@ Find more parties at PartyVerse.`);
 }
 
 function copyPartyLink(partyId) {
-    const party = sampleParties.find(p => p.id === partyId);
+    const party = PartyDB.getPartyById(partyId);
     if (!party) return;
     
     const shareText = `🎉 ${party.title}\n📅 ${formatDate(party.date)} at ${party.time}\n📍 ${party.location}\n💰 ${party.price === 0 ? 'Free' : '$' + party.price + ' per person'}\n👥 ${party.attendees}/${party.capacity} people\n\n${party.description}\n\nFind more parties at PartyVerse!`;
@@ -274,7 +277,7 @@ function fallbackCopyTextToClipboard(text) {
 
 // Chat functionality
 function openPartyChat(partyId) {
-    const party = sampleParties.find(p => p.id === partyId);
+    const party = PartyDB.getPartyById(partyId);
     if (!party) return;
     
     const currentUser = getCurrentUser();
@@ -316,10 +319,14 @@ function openPartyChat(partyId) {
     if (chatModal) {
         chatModal.style.display = 'block';
         loadChatMessages(partyId);
-        updateUnreadBadges();
         
         // Mark messages as read
         ChatDB.markMessagesAsRead(partyId, currentUser.id);
+        ChatDB.markAllNotificationsAsRead(currentUser.id, partyId);
+        
+        // Update badges
+        updateUnreadBadges();
+        updateBellNotificationBadge();
         
         // Focus on input
         setTimeout(() => {
@@ -407,10 +414,23 @@ function sendChatMessage(partyId) {
     ChatDB.addMessage(partyId, messageObj);
     
     // Send notifications to other participants
-    const party = sampleParties.find(p => p.id == partyId);
+    const party = PartyDB.getPartyById(partyId);
     const chat = ChatDB.getPartyChat(partyId);
     if (party && chat) {
-        chat.participants.forEach(participantId => {
+        // Get all users who should receive notifications (participants + hosts/admins)
+        const recipients = new Set(chat.participants);
+        
+        // Add all hosts and admins to recipients (they should always get notifications for their parties)
+        testUsers.forEach(user => {
+            if ((user.type === 'host' || user.type === 'admin') && user.id !== currentUser.id) {
+                recipients.add(user.id);
+                // Also add them to chat participants if not already there
+                ChatDB.addParticipantToChat(partyId, user.id);
+            }
+        });
+        
+        // Send notifications to all recipients
+        recipients.forEach(participantId => {
             if (participantId !== currentUser.id) {
                 ChatDB.addNotification(participantId, partyId, messageObj);
                 showChatNotification(party.name, currentUser.name, message);
@@ -430,6 +450,9 @@ function sendChatMessage(partyId) {
     // Update navigation notification badges
     updateNavigationNotificationBadges();
     
+    // Update bell notification badge
+    updateBellNotificationBadge();
+    
     // Show notification
     showNotification('Message sent!', 'success');
 }
@@ -445,7 +468,7 @@ function updateUnreadBadges() {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
     
-    sampleParties.forEach(party => {
+    PartyDB.getAllParties().forEach(party => {
         const unreadCount = ChatDB.getUnreadCount(party.id, currentUser.id);
         const badge = document.getElementById(`chatBadge-${party.id}`);
         
@@ -458,6 +481,74 @@ function updateUnreadBadges() {
             }
         }
     });
+    
+    // Also update the bell notification badge
+    updateBellNotificationBadge();
+}
+
+function updateBellNotificationBadge() {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    const unreadCount = ChatDB.getUnreadNotificationCount(currentUser.id);
+    const badge = document.getElementById('bellNotificationBadge');
+    
+    if (badge) {
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Render recommendations section
+function renderRecommendations() {
+    const recommendationsGrid = document.getElementById('recommendationsGrid');
+    if (!recommendationsGrid) return;
+    
+    // Get all parties (sample + user-created)
+    const allParties = PartyDB.getAllParties();
+    
+    // Sort by date (most recent first) and take first 6
+    const sortedParties = allParties
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 6);
+    
+    if (sortedParties.length === 0) {
+        recommendationsGrid.innerHTML = '<p style="color: #666; padding: 1rem;">No parties available yet.</p>';
+        return;
+    }
+    
+    // Generate gradient colors for party cards
+    const gradients = [
+        'linear-gradient(45deg, #ff6b6b, #ffd93d, #6bcf7f, #4d9de0)',
+        'linear-gradient(45deg, #8b5cf6, #ff6b6b, #ffd93d)',
+        'linear-gradient(45deg, #1a1a2e, #8b5cf6, #ff6b6b)',
+        'linear-gradient(45deg, #4d9de0, #6bcf7f, #ffd93d)',
+        'linear-gradient(45deg, #ff6b6b, #8b5cf6, #4d9de0)',
+        'linear-gradient(45deg, #ffd93d, #ff6b6b, #8b5cf6)'
+    ];
+    
+    recommendationsGrid.innerHTML = sortedParties.map((party, index) => {
+        const gradient = gradients[index % gradients.length];
+        const shortDescription = party.description.length > 30 
+            ? party.description.substring(0, 30) + '...' 
+            : party.description;
+        
+        return `
+            <div class="recommendation-card" onclick="showPartyDetails(${party.id})">
+                <div class="card-image">
+                    <div class="party-image" style="background: ${gradient}; background-size: 400% 400%; animation: gradientShift 3s ease infinite;"></div>
+                </div>
+                <div class="card-content">
+                    <h4>${escapeHTML(party.title)}</h4>
+                    <p>${escapeHTML(shortDescription)}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function escapeHTML(text) {
@@ -469,6 +560,18 @@ function escapeHTML(text) {
 // Initialize chat badges on page load
 document.addEventListener('DOMContentLoaded', () => {
     if (checkAuth()) {
-        setTimeout(updateUnreadBadges, 500);
+        setTimeout(() => {
+            updateUnreadBadges();
+            updateBellNotificationBadge();
+        }, 500);
+    }
+});
+
+// Update badge when page becomes visible (user returns to tab)
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && checkAuth()) {
+        updateBellNotificationBadge();
+        updateUnreadBadges();
+        renderRecommendations(); // Refresh recommendations in case new parties were created
     }
 });

@@ -52,9 +52,9 @@
                         </div>
                     </div>
                     <div class="notifications-section">
-                        <div class="notification-bell">
+                        <div class="notification-bell" onclick="window.location.href='chat.html'">
                             <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
+                            <span class="notification-badge" id="bellNotificationBadge">0</span>
                         </div>
                     </div>
                 </div>
@@ -128,34 +128,8 @@
                 <!-- Recommendations Section -->
                 <div class="recommendations-section">
                     <h3>Recommendations</h3>
-                    <div class="recommendations-grid">
-                        <div class="recommendation-card" onclick="showPartyDetails(1)">
-                            <div class="card-image">
-                                <div class="party-image funky-friday"></div>
-                            </div>
-                            <div class="card-content">
-                                <h4>Funky Friday</h4>
-                                <p>Dance the night away!</p>
-                            </div>
-                        </div>
-                        <div class="recommendation-card" onclick="showPartyDetails(2)">
-                            <div class="card-image">
-                                <div class="party-image wild-night"></div>
-                            </div>
-                            <div class="card-content">
-                                <h4>Wild Night</h4>
-                                <p>Epic party vibes!</p>
-                            </div>
-                        </div>
-                        <div class="recommendation-card" onclick="showPartyDetails(3)">
-                            <div class="card-image">
-                                <div class="party-image parteyy"></div>
-                            </div>
-                            <div class="card-content">
-                                <h4>Parteyy!</h4>
-                                <p>Join the celebration!</p>
-                            </div>
-                        </div>
+                    <div class="recommendations-grid" id="recommendationsGrid">
+                        <!-- Recommendations will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -168,7 +142,7 @@
                 <span>Home</span>
             </div>
             <div class="nav-item active" onclick="window.location.href='participant.html'">
-                <i class="fas fa-party-horn"></i>
+                <i class="fas fa-calendar"></i>
                 <span>Parties</span>
             </div>
             <div class="nav-item" onclick="window.location.href='host.html'">

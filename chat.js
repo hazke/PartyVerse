@@ -51,10 +51,20 @@ function setupEventListeners() {
     modals.forEach(modal => {
         const closeBtn = modal.querySelector('.close');
         if (closeBtn) {
-            closeBtn.onclick = () => modal.style.display = 'none';
+            closeBtn.onclick = () => {
+                modal.style.display = 'none';
+                if (modal.id === 'activeChatModal') {
+                    closeActiveChat();
+                }
+            };
         }
         modal.onclick = (e) => {
-            if (e.target === modal) modal.style.display = 'none';
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                if (modal.id === 'activeChatModal') {
+                    closeActiveChat();
+                }
+            }
         };
     });
 }
@@ -64,8 +74,14 @@ function loadChatList() {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
     
+    // Clean up orphaned notifications before loading
+    ChatDB.cleanupOrphanedNotifications();
+    
     chatList = ChatDB.getUserRecentChats(currentUser.id);
     renderChatList();
+    
+    // Update notification badges after cleanup
+    updateNavigationNotificationBadges();
 }
 
 // Render chat list
@@ -82,16 +98,17 @@ function renderChatList() {
     noChatsElement.style.display = 'none';
     
     chatListElement.innerHTML = chatList.map(chat => {
-        const party = sampleParties.find(p => p.id == chat.partyId);
-        const unreadCount = ChatDB.getUnreadCount(chat.partyId, getCurrentUser().id);
-        const lastMessage = ChatDB.getPartyMessages(chat.partyId).slice(-1)[0];
+        // Ensure partyId is treated as number for consistent matching
+        const partyId = Number(chat.partyId);
+        const party = PartyDB.getPartyById(partyId);
+        const unreadCount = ChatDB.getUnreadCount(partyId, getCurrentUser().id);
+        const lastMessage = ChatDB.getPartyMessages(partyId).slice(-1)[0];
         
         return `
-            <div class="chat-item ${currentActiveChat === chat.partyId ? 'active' : ''}" 
-                 onclick="openChat('${chat.partyId}')">
-                <div class="chat-item-content">
+            <div class="chat-item ${currentActiveChat === partyId ? 'active' : ''}">
+                <div class="chat-item-content" onclick="openChat(${partyId})">
                     <div class="chat-item-header">
-                        <h4>${party ? party.name : 'Unknown Party'}</h4>
+                        <h4>${party ? (party.title || party.name || 'Unknown Party') : 'Unknown Party'}</h4>
                         <span class="chat-time">${formatLastMessageTime(lastMessage ? lastMessage.timestamp : chat.lastActivity)}</span>
                     </div>
                     <div class="chat-item-message">
@@ -101,6 +118,9 @@ function renderChatList() {
                         }
                     </div>
                 </div>
+                <button class="chat-delete-btn" onclick="event.stopPropagation(); deleteChat(${partyId})" title="Delete conversation">
+                    <i class="fas fa-trash"></i>
+                </button>
                 ${unreadCount > 0 ? `<div class="chat-unread-badge">${unreadCount}</div>` : ''}
             </div>
         `;
@@ -109,24 +129,50 @@ function renderChatList() {
 
 // Open a chat
 function openChat(partyId) {
+    // Convert partyId to number for consistent matching
+    partyId = Number(partyId);
     currentActiveChat = partyId;
-    const party = sampleParties.find(p => p.id == partyId);
+    const party = PartyDB.getPartyById(partyId);
     
-    if (!party) return;
+    if (!party) {
+        console.error('Party not found for ID:', partyId);
+        return;
+    }
     
     // Update active chat header
-    document.getElementById('activePartyName').textContent = party.name;
-    document.getElementById('activePartyDetails').innerHTML = `
-        <i class="fas fa-map-marker-alt"></i> ${party.location} • 
-        <i class="fas fa-calendar"></i> ${formatDate(party.date)}
-    `;
+    const partyName = party.title || party.name || 'Unknown Party';
+    const activePartyName = document.getElementById('activePartyName');
+    const activePartyDetails = document.getElementById('activePartyDetails');
     
-    // Show active chat, hide welcome
-    document.getElementById('chatWelcome').style.display = 'none';
-    document.getElementById('activeChat').style.display = 'flex';
+    if (activePartyName) {
+        activePartyName.textContent = partyName;
+    }
+    if (activePartyDetails) {
+        activePartyDetails.innerHTML = `
+            <i class="fas fa-map-marker-alt"></i> ${party.location} • 
+            <i class="fas fa-calendar"></i> ${formatDate(party.date)}
+        `;
+    }
     
-    // Load messages
-    loadMessages(partyId);
+    // Show active chat modal
+    const chatModal = document.getElementById('activeChatModal');
+    if (!chatModal) {
+        console.error('Chat modal not found');
+        return;
+    }
+    chatModal.style.display = 'block';
+    
+    const activeChat = document.getElementById('activeChat');
+    if (!activeChat) {
+        console.error('Active chat container not found');
+        return;
+    }
+    activeChat.style.display = 'flex';
+    
+    // Load messages after a short delay to ensure modal is visible
+    setTimeout(() => {
+        loadMessages(partyId);
+    }, 100);
     
     // Mark messages as read
     ChatDB.markMessagesAsRead(partyId, getCurrentUser().id);
@@ -136,13 +182,31 @@ function openChat(partyId) {
     renderChatList();
     
     // Focus message input
-    document.getElementById('messageInput').focus();
+    setTimeout(() => {
+        const input = document.getElementById('messageInput');
+        if (input) input.focus();
+    }, 200);
 }
 
 // Load messages for a party
 function loadMessages(partyId) {
     const messages = ChatDB.getPartyMessages(partyId);
     const messagesContainer = document.getElementById('messagesContainer');
+    
+    if (!messagesContainer) {
+        console.error('Messages container not found');
+        return;
+    }
+    
+    if (messages.length === 0) {
+        messagesContainer.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #666;">
+                <i class="fas fa-comments" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                <p>No messages yet. Start the conversation!</p>
+            </div>
+        `;
+        return;
+    }
     
     messagesContainer.innerHTML = messages.map(message => {
         const isCurrentUser = message.userId === getCurrentUser().id;
@@ -160,7 +224,9 @@ function loadMessages(partyId) {
     }).join('');
     
     // Scroll to bottom
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    setTimeout(() => {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 100);
 }
 
 // Send a message
@@ -171,7 +237,7 @@ function sendMessage() {
     if (!messageText || !currentActiveChat) return;
     
     const currentUser = getCurrentUser();
-    const party = sampleParties.find(p => p.id == currentActiveChat);
+    const party = PartyDB.getPartyById(currentActiveChat);
     
     const message = {
         id: Date.now(),
@@ -189,6 +255,31 @@ function sendMessage() {
     // Add to chat if not exists
     const chat = ChatDB.getOrCreatePartyChat(currentActiveChat);
     ChatDB.addParticipantToChat(currentActiveChat, currentUser.id);
+    
+    // Ensure hosts/admins are added to participants so they get notifications
+    testUsers.forEach(user => {
+        if (user.type === 'host' || user.type === 'admin') {
+            ChatDB.addParticipantToChat(currentActiveChat, user.id);
+        }
+    });
+    
+    // Send notifications to all participants (including hosts/admins)
+    const updatedChat = ChatDB.getPartyChat(currentActiveChat);
+    if (updatedChat) {
+        const recipients = new Set(updatedChat.participants);
+        // Add all hosts and admins
+        testUsers.forEach(user => {
+            if ((user.type === 'host' || user.type === 'admin') && user.id !== currentUser.id) {
+                recipients.add(user.id);
+            }
+        });
+        
+        recipients.forEach(participantId => {
+            if (participantId !== currentUser.id) {
+                ChatDB.addNotification(participantId, currentActiveChat, message);
+            }
+        });
+    }
     
     // Clear input
     messageInput.value = '';
@@ -213,18 +304,22 @@ function handleMessageKeypress(event) {
 // Close active chat
 function closeActiveChat() {
     currentActiveChat = null;
+    const chatModal = document.getElementById('activeChatModal');
+    if (chatModal) {
+        chatModal.style.display = 'none';
+    }
     document.getElementById('activeChat').style.display = 'none';
-    document.getElementById('chatWelcome').style.display = 'flex';
     renderChatList();
 }
 
 // Search chats
 function searchChats() {
     const searchTerm = document.getElementById('chatSearch').value.toLowerCase();
-    const filteredChats = chatList.filter(chat => {
-        const party = sampleParties.find(p => p.id == chat.partyId);
-        return party && party.name.toLowerCase().includes(searchTerm);
-    });
+        const filteredChats = chatList.filter(chat => {
+            const party = PartyDB.getPartyById(chat.partyId);
+            const partyName = party ? (party.title || party.name || '') : '';
+            return partyName.toLowerCase().includes(searchTerm);
+        });
     
     // Temporarily replace chat list for search results
     const chatListElement = document.getElementById('chatList');
@@ -243,16 +338,15 @@ function searchChats() {
     
     if (searchTerm) {
         chatListElement.innerHTML = filteredChats.map(chat => {
-            const party = sampleParties.find(p => p.id == chat.partyId);
+            const party = PartyDB.getPartyById(chat.partyId);
             const unreadCount = ChatDB.getUnreadCount(chat.partyId, getCurrentUser().id);
             const lastMessage = ChatDB.getPartyMessages(chat.partyId).slice(-1)[0];
             
             return `
-                <div class="chat-item ${currentActiveChat === chat.partyId ? 'active' : ''}" 
-                     onclick="openChat('${chat.partyId}')">
-                    <div class="chat-item-content">
+                <div class="chat-item ${currentActiveChat === chat.partyId ? 'active' : ''}">
+                    <div class="chat-item-content" onclick="openChat(${chat.partyId})">
                         <div class="chat-item-header">
-                            <h4>${party ? party.name : 'Unknown Party'}</h4>
+                            <h4>${party ? (party.title || party.name || 'Unknown Party') : 'Unknown Party'}</h4>
                             <span class="chat-time">${formatLastMessageTime(lastMessage ? lastMessage.timestamp : chat.lastActivity)}</span>
                         </div>
                         <div class="chat-item-message">
@@ -262,6 +356,9 @@ function searchChats() {
                             }
                         </div>
                     </div>
+                    <button class="chat-delete-btn" onclick="event.stopPropagation(); deleteChat(${chat.partyId})" title="Delete conversation">
+                        <i class="fas fa-trash"></i>
+                    </button>
                     ${unreadCount > 0 ? `<div class="chat-unread-badge">${unreadCount}</div>` : ''}
                 </div>
             `;
@@ -281,14 +378,14 @@ function refreshChats() {
 function showPartyInfo() {
     if (!currentActiveChat) return;
     
-    const party = sampleParties.find(p => p.id == currentActiveChat);
+    const party = PartyDB.getPartyById(currentActiveChat);
     if (!party) return;
     
     const modal = document.getElementById('partyInfoModal');
     const content = document.getElementById('partyInfoContent');
     
     content.innerHTML = `
-        <h3>${party.name}</h3>
+        <h3>${party.title || party.name || 'Unknown Party'}</h3>
         <div class="party-info-details">
             <div class="info-item">
                 <i class="fas fa-calendar"></i>
@@ -340,11 +437,24 @@ function showMessageNotification(party, sender, message) {
     // Get all participants except sender
     const chat = ChatDB.getPartyChat(party.id);
     if (chat) {
-        chat.participants.forEach(participantId => {
+        // Get all users who should receive notifications (participants + hosts/admins)
+        const recipients = new Set(chat.participants);
+        
+        // Add all hosts and admins to recipients (they should always get notifications for their parties)
+        testUsers.forEach(user => {
+            if ((user.type === 'host' || user.type === 'admin') && user.id !== sender.id) {
+                recipients.add(user.id);
+                // Also add them to chat participants if not already there
+                ChatDB.addParticipantToChat(party.id, user.id);
+            }
+        });
+        
+        // Send notifications to all recipients
+        recipients.forEach(participantId => {
             if (participantId !== sender.id) {
                 const participant = testUsers.find(u => u.id === participantId);
                 if (participant) {
-                    showChatNotification(party.name, sender.name, message);
+                    showChatNotification(party.title || party.name || 'Party', sender.name, message);
                 }
             }
         });
@@ -367,6 +477,84 @@ function formatLastMessageTime(timestamp) {
         return 'Yesterday';
     } else {
         return messageTime.toLocaleDateString();
+    }
+}
+
+// Delete chat conversation
+function deleteChat(partyId) {
+    const party = PartyDB.getPartyById(partyId);
+    const partyName = party ? (party.title || party.name || 'this conversation') : 'this conversation';
+    const currentUser = getCurrentUser();
+    
+    if (confirm(`Are you sure you want to delete "${partyName}"? This will permanently delete all messages in this conversation.`)) {
+        // Delete the chat (this also deletes messages and notifications for all users)
+        ChatDB.deleteChat(partyId);
+        
+        // Clean up any orphaned notifications
+        ChatDB.cleanupOrphanedNotifications();
+        
+        // If this was the active chat, close it
+        if (currentActiveChat === partyId) {
+            closeActiveChat();
+        }
+        
+        // Reload chat list
+        loadChatList();
+        
+        // Update all notification badges - this will recalculate unread count (should be 0 after deletion)
+        updateNavigationNotificationBadges();
+        
+        showNotification('Conversation deleted', 'success');
+    }
+}
+
+// Delete current active chat
+function deleteCurrentChat() {
+    if (!currentActiveChat) return;
+    deleteChat(currentActiveChat);
+}
+
+// Delete all chat history
+function deleteAllChats() {
+    if (confirm('Are you sure you want to delete ALL chat history? This action cannot be undone.')) {
+        const currentUser = getCurrentUser();
+        if (!currentUser) return;
+        
+        // Get all user chats
+        const chats = ChatDB.getUserRecentChats(currentUser.id);
+        
+        // Delete each chat (this also deletes messages and notifications)
+        chats.forEach(chat => {
+            ChatDB.deleteChat(chat.partyId);
+        });
+        
+        // Clean up any orphaned notifications
+        ChatDB.cleanupOrphanedNotifications();
+        
+        // Also clear all notifications for current user to be absolutely sure
+        const notifications = JSON.parse(localStorage.getItem('partyverse_chat_notifications') || '{}');
+        if (notifications[currentUser.id]) {
+            notifications[currentUser.id] = [];
+            localStorage.setItem('partyverse_chat_notifications', JSON.stringify(notifications));
+        }
+        
+        // Close active chat if open
+        if (currentActiveChat) {
+            closeActiveChat();
+        }
+        
+        // Reload chat list
+        loadChatList();
+        
+        // Update all notification badges
+        updateNavigationNotificationBadges();
+        
+        // Also update bell badge if it exists (for participant page)
+        if (typeof updateBellNotificationBadge === 'function') {
+            updateBellNotificationBadge();
+        }
+        
+        showNotification('All conversations deleted', 'success');
     }
 }
 

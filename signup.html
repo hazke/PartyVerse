@@ -48,7 +48,11 @@
                         <a href="login.html" class="login-link">Log in</a>
                     </div>
                     
-                    <button type="submit" class="btn-finish">
+                    <button type="button" class="btn-mitid" onclick="verifyMitID()">
+                        <i class="fas fa-id-card"></i> mitID verification
+                    </button>
+                    
+                    <button type="submit" id="finishBtn" class="btn-finish" disabled>
                         Finish
                     </button>
                 </form>
@@ -58,8 +62,36 @@
 
     <script src="shared.js"></script>
     <script>
+        let mitIDVerified = false;
+        
+        // Initialize: disable Finish button on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const finishBtn = document.getElementById('finishBtn');
+            if (finishBtn) {
+                finishBtn.disabled = true;
+            }
+        });
+        
+        function verifyMitID() {
+            // Simulate mitID verification
+            showNotification('mitID verified', 'success');
+            mitIDVerified = true;
+            
+            // Enable Finish button
+            const finishBtn = document.getElementById('finishBtn');
+            if (finishBtn) {
+                finishBtn.disabled = false;
+            }
+        }
+        
         function completeSignup(event) {
             event.preventDefault();
+            
+            // Check if mitID is verified
+            if (!mitIDVerified) {
+                showNotification('Please complete mitID verification first', 'error');
+                return;
+            }
             
             const name = document.getElementById('signupName').value;
             const email = document.getElementById('signupEmail').value;

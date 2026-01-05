@@ -1,6 +1,21 @@
 // Host page JavaScript
 let hostedParties = [];
 
+// Load hosted parties from localStorage
+function loadHostedParties() {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    // Get all user-created parties from localStorage
+    const userParties = JSON.parse(localStorage.getItem('partyverse_user_parties') || '[]');
+    
+    // Filter to only show parties created by current user (match by host name or user ID)
+    hostedParties = userParties.filter(party => {
+        // Match by host name or if we stored userId, match by that
+        return party.host === currentUser.name || party.hostId === currentUser.id;
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Check authentication
     if (!checkAuth()) {
@@ -27,9 +42,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Load hosted parties from localStorage
+    loadHostedParties();
+
     // Setup event listeners
     setupHostEvents();
     renderHostedParties();
+});
+
+// Refresh hosted parties when page becomes visible (user returns to tab)
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && checkAuth()) {
+        loadHostedParties();
+        renderHostedParties();
+    }
 });
 
 function setupHostEvents() {
@@ -55,10 +81,14 @@ function createParty(event) {
         price: parseFloat(document.getElementById('partyPrice').value) || 0,
         capacity: parseInt(document.getElementById('partyCapacity').value),
         host: currentUser ? currentUser.name : 'You',
+        hostId: currentUser ? currentUser.id : null, // Store user ID for filtering
         attendees: 0
     };
 
     hostedParties.push(party);
+    
+    // Save to localStorage so it appears in recommendations and persists
+    PartyDB.addParty(party);
     
     document.getElementById('partyForm').reset();
     renderHostedParties();
@@ -69,6 +99,22 @@ function createParty(event) {
 function renderHostedParties() {
     const hostedPartiesList = document.getElementById('hostedPartiesList');
     if (!hostedPartiesList) return;
+    
+    // Reload from localStorage to ensure we have the latest data
+    loadHostedParties();
+    
+    if (hostedParties.length === 0) {
+        hostedPartiesList.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #666;">
+                <i class="fas fa-calendar-plus" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                <p>No parties created yet.</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">Create your first party using the form above!</p>
+            </div>
+        `;
+        // Update unread badges even if no parties
+        setTimeout(updateHostUnreadBadges, 100);
+        return;
+    }
     
     hostedPartiesList.innerHTML = hostedParties.map(party => `
         <div class="party-item">
@@ -96,6 +142,10 @@ function renderHostedParties() {
 function deleteParty(partyId) {
     if (confirm('Are you sure you want to delete this party?')) {
         hostedParties = hostedParties.filter(p => p.id !== partyId);
+        // Also remove from localStorage
+        PartyDB.deleteParty(partyId);
+        // Reload from localStorage to ensure sync
+        loadHostedParties();
         renderHostedParties();
         showNotification('Party deleted successfully!', 'success');
     }
@@ -193,10 +243,23 @@ function sendChatMessage(partyId) {
     ChatDB.addMessage(partyId, messageObj);
     
     // Send notifications to other participants
-    const party = sampleParties.find(p => p.id == partyId);
+    const party = PartyDB.getPartyById(partyId);
     const chat = ChatDB.getPartyChat(partyId);
     if (party && chat) {
-        chat.participants.forEach(participantId => {
+        // Get all users who should receive notifications (participants + hosts/admins)
+        const recipients = new Set(chat.participants);
+        
+        // Add all hosts and admins to recipients (they should always get notifications for their parties)
+        testUsers.forEach(user => {
+            if ((user.type === 'host' || user.type === 'admin') && user.id !== currentUser.id) {
+                recipients.add(user.id);
+                // Also add them to chat participants if not already there
+                ChatDB.addParticipantToChat(partyId, user.id);
+            }
+        });
+        
+        // Send notifications to all recipients
+        recipients.forEach(participantId => {
             if (participantId !== currentUser.id) {
                 ChatDB.addNotification(participantId, partyId, messageObj);
                 showChatNotification(party.name, currentUser.name, message);

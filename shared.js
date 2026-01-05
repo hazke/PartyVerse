@@ -27,6 +27,35 @@ const testUsers = [
     }
 ];
 
+// Party Management System
+const PartyDB = {
+    // Get all parties (sample + user-created)
+    getAllParties() {
+        const userParties = JSON.parse(localStorage.getItem('partyverse_user_parties') || '[]');
+        return [...sampleParties, ...userParties];
+    },
+    
+    // Add a new party (created by user)
+    addParty(party) {
+        const userParties = JSON.parse(localStorage.getItem('partyverse_user_parties') || '[]');
+        userParties.push(party);
+        localStorage.setItem('partyverse_user_parties', JSON.stringify(userParties));
+    },
+    
+    // Delete a user-created party
+    deleteParty(partyId) {
+        const userParties = JSON.parse(localStorage.getItem('partyverse_user_parties') || '[]');
+        const filtered = userParties.filter(p => p.id !== partyId);
+        localStorage.setItem('partyverse_user_parties', JSON.stringify(filtered));
+    },
+    
+    // Get a party by ID
+    getPartyById(partyId) {
+        const allParties = this.getAllParties();
+        return allParties.find(p => p.id == partyId);
+    }
+};
+
 // Sample parties data
 const sampleParties = [
     {
@@ -359,6 +388,65 @@ const ChatDB = {
     getUnreadNotificationCount(userId) {
         const notifications = this.getNotifications(userId);
         return notifications.filter(n => !n.read).length;
+    },
+
+    // Delete all messages for a party
+    deletePartyMessages(partyId) {
+        const messages = JSON.parse(localStorage.getItem('partyverse_chat_messages') || '[]');
+        const filteredMessages = messages.filter(msg => msg.partyId !== partyId);
+        localStorage.setItem('partyverse_chat_messages', JSON.stringify(filteredMessages));
+    },
+
+    // Delete chat conversation (removes chat and all messages)
+    deleteChat(partyId) {
+        const chats = this.getAllChats();
+        if (chats[partyId]) {
+            delete chats[partyId];
+            localStorage.setItem('partyverse_chats', JSON.stringify(chats));
+        }
+        // Also delete all messages for this party
+        this.deletePartyMessages(partyId);
+        
+        // Delete related notifications for ALL users
+        // Convert partyId to both string and number to handle type mismatches
+        const partyIdStr = String(partyId);
+        const partyIdNum = Number(partyId);
+        const notifications = JSON.parse(localStorage.getItem('partyverse_chat_notifications') || '{}');
+        Object.keys(notifications).forEach(userId => {
+            if (notifications[userId] && Array.isArray(notifications[userId])) {
+                // Filter out notifications for this party (check both string and number formats)
+                notifications[userId] = notifications[userId].filter(n => {
+                    const nPartyId = String(n.partyId);
+                    return nPartyId !== partyIdStr && nPartyId !== String(partyIdNum);
+                });
+            }
+        });
+        localStorage.setItem('partyverse_chat_notifications', JSON.stringify(notifications));
+    },
+
+    // Clean up orphaned notifications (notifications for parties that no longer exist)
+    cleanupOrphanedNotifications() {
+        const chats = this.getAllChats();
+        const existingPartyIds = Object.keys(chats).map(id => String(id));
+        const notifications = JSON.parse(localStorage.getItem('partyverse_chat_notifications') || '{}');
+        
+        Object.keys(notifications).forEach(userId => {
+            if (notifications[userId] && Array.isArray(notifications[userId])) {
+                // Remove notifications for parties that don't exist anymore
+                notifications[userId] = notifications[userId].filter(n => {
+                    const nPartyId = String(n.partyId);
+                    return existingPartyIds.includes(nPartyId);
+                });
+            }
+        });
+        localStorage.setItem('partyverse_chat_notifications', JSON.stringify(notifications));
+    },
+
+    // Delete a specific message
+    deleteMessage(messageId) {
+        const messages = JSON.parse(localStorage.getItem('partyverse_chat_messages') || '[]');
+        const filteredMessages = messages.filter(msg => msg.id !== messageId);
+        localStorage.setItem('partyverse_chat_messages', JSON.stringify(filteredMessages));
     }
 };
 
